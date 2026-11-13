@@ -122,12 +122,16 @@ export default function ErrorsPanel({
               </div>
             </div>
 
-            {/* Python Cryptic Error */}
+            {/* Python / Traditional Engine Cryptic Error */}
             <div className="p-3.5 bg-slate-900 text-slate-100 rounded-xl font-mono text-xs border border-slate-700 flex flex-col justify-between">
               <div>
                 <div className="flex items-center gap-1.5 text-xs font-bold text-rose-400 mb-2">
                   <AlertCircle className="w-3.5 h-3.5" />
-                  <span>Python (Raw Cryptic Error)</span>
+                  <span>
+                    {currentError.pythonEquivalent?.rawError.includes("JavaScript")
+                      ? "JavaScript (Engine Trace)"
+                      : "Python (Raw Cryptic Error)"}
+                  </span>
                 </div>
                 <pre className="whitespace-pre-wrap text-[11px] text-rose-300 bg-slate-950 p-2.5 rounded border border-slate-800 mb-2">
                   {currentError.pythonEquivalent?.rawError ||
@@ -136,7 +140,7 @@ export default function ErrorsPanel({
               </div>
               <p className="text-[11px] text-slate-400 italic">
                 {currentError.pythonEquivalent?.explanation ||
-                  "Python stops with stack traces and technical jargon that can intimidate beginners."}
+                  "Traditional languages stop with stack traces and technical jargon that can intimidate beginners."}
               </p>
             </div>
           </div>

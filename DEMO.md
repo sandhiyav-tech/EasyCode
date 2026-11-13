@@ -116,7 +116,23 @@ NameError: name 'playrName' is not defined. Did you mean: 'playerName'?
 
 ---
 
-### Part 5: Wrap-up (1:50 - 2:00)
+### Part 5: Multi-Language Bridge & 1-Click Transpiler (1:50 - 2:15)
+1. In the toolbar, click **"Convert to: Python"**:
+   - The EasyCode program instantly converts into idiomatic Python (`if score >= 90: ... print(...)`)!
+2. Click **"Convert to: JavaScript"**:
+   - Watch the program transpile into clean JavaScript with `let` and `console.log`.
+3. Switch between **[ EasyCode | Python | JavaScript ]** tabs to show that all three languages run directly inside the browser with sandboxed safety.
+
+---
+
+### Part 6: Login Portal & Cloud Snippets (2:15 - 2:30)
+1. Click the **"Sign In"** button in the top navbar.
+2. Select **"Demo: Student (Alex)"** to sign in instantly with 1 click.
+3. Show the **"My Programs"** modal where students can save their code to the cloud and reload their projects anytime.
+
+---
+
+### Part 7: Wrap-up (2:30)
 **Speaker Script:**
-> *"EasyCode proves that programming doesn't need to feel punitive. When every error teaches with kindness and clarity, any student can learn to code with confidence."*
+> *"EasyCode proves that programming doesn't need to feel punitive. With compassionate error messages, multi-language bridging into Python and JavaScript, and a full cloud playground, every beginner can learn to code with confidence."*
 

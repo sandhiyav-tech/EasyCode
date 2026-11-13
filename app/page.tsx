@@ -8,7 +8,7 @@ import AskModal, { AskPrompt } from "@/components/AskModal";
 import UserMenu from "@/components/UserMenu";
 import SavedSnippetsModal from "@/components/SavedSnippetsModal";
 import { EasyCodeError } from "@/lib/easycode";
-import { EXAMPLES, ExampleProgram } from "@/lib/easycode/examples";
+import { EXAMPLES, ExampleProgram, DEFAULT_CODE_BY_LANG } from "@/lib/easycode/examples";
 import { User, SavedSnippet } from "@/lib/auth";
 import {
   Play,
@@ -23,29 +23,20 @@ import {
   BookOpen,
   Check,
   Bookmark,
+  Languages,
+  ArrowRightLeft,
+  Code2,
 } from "lucide-react";
 
-const DEFAULT_CODE = `# Welcome to EasyCode!
-# A beginner-friendly language where every mistake teaches something.
-
-set name to "Alex"
-set score to 10
-
-say "Hello, " + name + "!"
-
-if score is at least 10:
-    say "Outstanding! You got a top score."
-otherwise:
-    say "Keep practicing, you will get it!"
-`;
-
 export default function PlaygroundPage() {
-  const [code, setCode] = useState<string>(DEFAULT_CODE);
+  const [language, setLanguage] = useState<"easycode" | "python" | "javascript">("easycode");
+  const [code, setCode] = useState<string>(DEFAULT_CODE_BY_LANG.easycode);
   const [errors, setErrors] = useState<EasyCodeError[]>([]);
   const [output, setOutput] = useState<string[]>([]);
   const [steps, setSteps] = useState<string[]>([]);
   const [durationMs, setDurationMs] = useState<number | undefined>(undefined);
   const [isRunning, setIsRunning] = useState<boolean>(false);
+  const [isTranspiling, setIsTranspiling] = useState<boolean>(false);
   const [mode, setMode] = useState<"run" | "explain">("run");
   const [activeLine, setActiveLine] = useState<number | null>(null);
   const [isDarkMode, setIsDarkMode] = useState<boolean>(false);
@@ -114,8 +105,11 @@ export default function PlaygroundPage() {
     });
   };
 
-  // Live syntax checking debounced 400ms
+  // Live syntax checking debounced 400ms (for EasyCode)
   useEffect(() => {
+    if (language !== "easycode") {
+      return;
+    }
     const timer = setTimeout(async () => {
       try {
         const res = await fetch("/api/check", {
@@ -133,7 +127,7 @@ export default function PlaygroundPage() {
     }, 400);
 
     return () => clearTimeout(timer);
-  }, [code]);
+  }, [code, language]);
 
   // Scan for ask statements in code
   const scanForAskPrompts = (source: string): AskPrompt[] => {
@@ -162,6 +156,7 @@ export default function PlaygroundPage() {
             code,
             mode: execMode,
             inputs: userInputs,
+            language,
           }),
         });
 
@@ -173,6 +168,8 @@ export default function PlaygroundPage() {
         if (data.error) {
           setErrors([data.error]);
           setActiveLine(data.error.line);
+        } else {
+          setErrors([]);
         }
       } catch {
         setOutput(["Failed to connect to execution engine."]);
@@ -180,8 +177,55 @@ export default function PlaygroundPage() {
         setIsRunning(false);
       }
     },
-    [code]
+    [code, language]
   );
+
+  // Switch Active Programming Language
+  const handleSwitchLanguage = (newLang: "easycode" | "python" | "javascript") => {
+    if (newLang === language) return;
+    setLanguage(newLang);
+    setErrors([]);
+    setOutput([]);
+    setSteps([]);
+
+    const currentIsDefault =
+      !code.trim() ||
+      code.trim() === DEFAULT_CODE_BY_LANG.easycode.trim() ||
+      code.trim() === DEFAULT_CODE_BY_LANG.python.trim() ||
+      code.trim() === DEFAULT_CODE_BY_LANG.javascript.trim();
+
+    if (currentIsDefault) {
+      setCode(DEFAULT_CODE_BY_LANG[newLang]);
+    }
+  };
+
+  // 1-Click Code Transpiler between languages
+  const handleTranspile = async (targetLang: "python" | "javascript") => {
+    setIsTranspiling(true);
+    try {
+      const res = await fetch("/api/transpile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code,
+          targetLanguage: targetLang,
+        }),
+      });
+      const data = await res.json();
+      if (data.converted) {
+        setCode(data.converted);
+        setLanguage(targetLang);
+        setErrors([]);
+        setOutput([
+          `⚡ Converted EasyCode into ${targetLang === "python" ? "Python" : "JavaScript"} successfully! You can run it directly.`
+        ]);
+      }
+    } catch {
+      setOutput(["Failed to transpile code."]);
+    } finally {
+      setIsTranspiling(false);
+    }
+  };
 
   // Trigger Run with Ask detection
   const handleRun = (execMode: "run" | "explain" = "run") => {
@@ -229,9 +273,11 @@ export default function PlaygroundPage() {
 
   // Example selection
   const handleSelectExample = (example: ExampleProgram) => {
+    setLanguage(example.language || "easycode");
     setCode(example.code);
     setOutput([]);
     setSteps([]);
+    setErrors([]);
     if (example.category === "broken") {
       setShowPythonCompare(true);
     }
@@ -330,11 +376,13 @@ export default function PlaygroundPage() {
           </button>
 
           {/* Dropdown Menu */}
-          <div className="absolute left-0 mt-1 w-64 p-2 bg-white dark:bg-warm-900 border border-warm-200 dark:border-warm-800 rounded-2xl shadow-xl hidden group-hover:block z-50">
-            <div className="text-[10px] uppercase font-bold text-warm-400 px-2 py-1">
-              Starter Programs
+          <div className="absolute left-0 mt-1 w-72 max-h-96 overflow-y-auto p-2 bg-white dark:bg-warm-900 border border-warm-200 dark:border-warm-800 rounded-2xl shadow-xl hidden group-hover:block z-50">
+            {/* EasyCode Starters */}
+            <div className="text-[10px] uppercase font-bold text-brand-600 dark:text-brand-400 px-2 py-1 flex items-center gap-1">
+              <Sparkles className="w-3 h-3" />
+              <span>EasyCode Programs</span>
             </div>
-            {EXAMPLES.filter((e) => e.category === "starter").map((ex) => (
+            {EXAMPLES.filter((e) => e.category === "starter" && (!e.language || e.language === "easycode")).map((ex) => (
               <button
                 key={ex.id}
                 onClick={() => handleSelectExample(ex)}
@@ -349,17 +397,58 @@ export default function PlaygroundPage() {
               </button>
             ))}
 
-            <div className="text-[10px] uppercase font-bold text-amber-500 px-2 pt-2.5 pb-1 border-t border-warm-100 dark:border-warm-800 mt-1">
-              Error Demonstrations
+            {/* Python Starters */}
+            <div className="text-[10px] uppercase font-bold text-amber-600 dark:text-amber-400 px-2 pt-2 pb-1 border-t border-warm-100 dark:border-warm-800 mt-1 flex items-center gap-1">
+              <Terminal className="w-3 h-3" />
+              <span>Python Programs</span>
+            </div>
+            {EXAMPLES.filter((e) => e.category === "starter" && e.language === "python").map((ex) => (
+              <button
+                key={ex.id}
+                onClick={() => handleSelectExample(ex)}
+                className="w-full text-left px-2.5 py-1.5 text-xs rounded-lg hover:bg-amber-50 dark:hover:bg-amber-950/40 flex flex-col"
+              >
+                <span className="font-semibold text-warm-800 dark:text-warm-200">
+                  {ex.title}
+                </span>
+                <span className="text-[10px] text-warm-400 line-clamp-1">
+                  {ex.description}
+                </span>
+              </button>
+            ))}
+
+            {/* JavaScript Starters */}
+            <div className="text-[10px] uppercase font-bold text-yellow-600 dark:text-yellow-400 px-2 pt-2 pb-1 border-t border-warm-100 dark:border-warm-800 mt-1 flex items-center gap-1">
+              <Code2 className="w-3 h-3" />
+              <span>JavaScript Programs</span>
+            </div>
+            {EXAMPLES.filter((e) => e.category === "starter" && e.language === "javascript").map((ex) => (
+              <button
+                key={ex.id}
+                onClick={() => handleSelectExample(ex)}
+                className="w-full text-left px-2.5 py-1.5 text-xs rounded-lg hover:bg-yellow-50 dark:hover:bg-yellow-950/40 flex flex-col"
+              >
+                <span className="font-semibold text-warm-800 dark:text-warm-200">
+                  {ex.title}
+                </span>
+                <span className="text-[10px] text-warm-400 line-clamp-1">
+                  {ex.description}
+                </span>
+              </button>
+            ))}
+
+            {/* Broken / Bug Demonstrations */}
+            <div className="text-[10px] uppercase font-bold text-rose-500 px-2 pt-2 pb-1 border-t border-warm-100 dark:border-warm-800 mt-1">
+              Bug &amp; Error Demonstrations
             </div>
             {EXAMPLES.filter((e) => e.category === "broken").map((ex) => (
               <button
                 key={ex.id}
                 onClick={() => handleSelectExample(ex)}
-                className="w-full text-left px-2.5 py-1.5 text-xs rounded-lg hover:bg-amber-50 dark:hover:bg-amber-950/40 text-amber-900 dark:text-amber-200 flex flex-col"
+                className="w-full text-left px-2.5 py-1.5 text-xs rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30 text-rose-900 dark:text-rose-200 flex flex-col"
               >
                 <span className="font-semibold">{ex.title}</span>
-                <span className="text-[10px] text-amber-700/80 dark:text-amber-400 line-clamp-1">
+                <span className="text-[10px] text-rose-700/80 dark:text-rose-400 line-clamp-1">
                   {ex.description}
                 </span>
               </button>
@@ -467,16 +556,104 @@ export default function PlaygroundPage() {
       {/* Main Workspace (Editor on Left, Split Output/Errors on Right) */}
       <main className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-3 p-3 overflow-hidden">
         {/* Left: Code Editor (7 cols on large screens) */}
-        <section className="lg:col-span-7 h-full flex flex-col overflow-hidden">
-          <Editor
-            code={code}
-            onChange={(val) => setCode(val)}
-            errors={errors}
-            onRun={() => handleRun("run")}
-            onExplain={() => handleRun("explain")}
-            activeLine={activeLine}
-            onSelectErrorLine={(line) => setActiveLine(line)}
-          />
+        <section className="lg:col-span-7 h-full flex flex-col gap-2 overflow-hidden">
+          {/* Language Selector & Transpiler Toolbar */}
+          <div className="flex items-center justify-between px-3 py-1.5 bg-white dark:bg-warm-900 border border-warm-200 dark:border-warm-800 rounded-xl shadow-xs text-xs">
+            {/* Language Selector Pills */}
+            <div className="flex items-center gap-1 bg-warm-100 dark:bg-warm-950 p-1 rounded-lg">
+              <button
+                onClick={() => handleSwitchLanguage("easycode")}
+                className={`flex items-center gap-1.5 px-3 py-1 rounded-md font-bold transition-all ${
+                  language === "easycode"
+                    ? "bg-white dark:bg-warm-800 text-brand-600 dark:text-brand-300 shadow-xs"
+                    : "text-warm-500 hover:text-warm-800 dark:hover:text-warm-200"
+                }`}
+                title="EasyCode: beginner-friendly syntax with friendly learning errors"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>EasyCode</span>
+              </button>
+
+              <button
+                onClick={() => handleSwitchLanguage("python")}
+                className={`flex items-center gap-1.5 px-3 py-1 rounded-md font-bold transition-all ${
+                  language === "python"
+                    ? "bg-white dark:bg-warm-800 text-amber-600 dark:text-amber-300 shadow-xs"
+                    : "text-warm-500 hover:text-warm-800 dark:hover:text-warm-200"
+                }`}
+                title="Python: clean indentation and colons"
+              >
+                <Terminal className="w-3.5 h-3.5" />
+                <span>Python</span>
+              </button>
+
+              <button
+                onClick={() => handleSwitchLanguage("javascript")}
+                className={`flex items-center gap-1.5 px-3 py-1 rounded-md font-bold transition-all ${
+                  language === "javascript"
+                    ? "bg-white dark:bg-warm-800 text-yellow-600 dark:text-yellow-300 shadow-xs"
+                    : "text-warm-500 hover:text-warm-800 dark:hover:text-warm-200"
+                }`}
+                title="JavaScript: the language of the modern web"
+              >
+                <Code2 className="w-3.5 h-3.5" />
+                <span>JavaScript</span>
+              </button>
+            </div>
+
+            {/* Quick Transpile Actions */}
+            <div className="flex items-center gap-1.5">
+              {language === "easycode" ? (
+                <>
+                  <span className="text-[11px] text-warm-400 hidden sm:inline">Convert to:</span>
+                  <button
+                    onClick={() => handleTranspile("python")}
+                    disabled={isTranspiling}
+                    className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 dark:hover:bg-amber-900/40 text-amber-800 dark:text-amber-300 rounded-md border border-amber-200 dark:border-amber-800 transition-colors disabled:opacity-50"
+                    title="Translate this EasyCode program into Python code"
+                  >
+                    <ArrowRightLeft className="w-3 h-3" />
+                    <span>Python</span>
+                  </button>
+                  <button
+                    onClick={() => handleTranspile("javascript")}
+                    disabled={isTranspiling}
+                    className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold bg-yellow-50 hover:bg-yellow-100 dark:bg-yellow-950/40 dark:hover:bg-yellow-900/40 text-yellow-800 dark:text-yellow-300 rounded-md border border-yellow-200 dark:border-yellow-800 transition-colors disabled:opacity-50"
+                    title="Translate this EasyCode program into JavaScript code"
+                  >
+                    <ArrowRightLeft className="w-3 h-3" />
+                    <span>JavaScript</span>
+                  </button>
+                </>
+              ) : (
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[11px] text-warm-500 font-medium hidden sm:inline">
+                    Running in {language === "python" ? "Python" : "JavaScript"} Sandbox
+                  </span>
+                  <button
+                    onClick={() => handleSwitchLanguage("easycode")}
+                    className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold bg-brand-50 hover:bg-brand-100 dark:bg-brand-950/40 text-brand-700 dark:text-brand-300 rounded-md border border-brand-200 dark:border-brand-800"
+                  >
+                    <Sparkles className="w-3 h-3" />
+                    <span>Back to EasyCode</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="flex-1 min-h-0 overflow-hidden">
+            <Editor
+              code={code}
+              onChange={(val) => setCode(val)}
+              errors={errors}
+              onRun={() => handleRun("run")}
+              onExplain={() => handleRun("explain")}
+              activeLine={activeLine}
+              onSelectErrorLine={(line) => setActiveLine(line)}
+              language={language}
+            />
+          </div>
         </section>
 
         {/* Right: Output & Errors (5 cols on large screens) */}

@@ -4,6 +4,7 @@ export interface ExampleProgram {
   id: string;
   title: string;
   category: "starter" | "broken";
+  language?: "easycode" | "python" | "javascript";
   description: string;
   code: string;
   inputs?: string[];
@@ -14,6 +15,49 @@ export interface ExampleProgram {
     explanation: string;
   };
 }
+
+export const DEFAULT_CODE_BY_LANG: Record<"easycode" | "python" | "javascript", string> = {
+  easycode: `# Welcome to EasyCode!
+# A beginner-friendly language where every mistake teaches something.
+
+set name to "Alex"
+set score to 10
+
+say "Hello, " + name + "!"
+
+if score is at least 10:
+    say "Outstanding! You got a top score."
+otherwise:
+    say "Keep practicing, you will get it!"
+`,
+  python: `# Welcome to Python Mode!
+# Clean syntax with colons and indentation.
+
+name = "Alex"
+score = 10
+
+print("Hello, " + name + "!")
+
+if score >= 10:
+    print("Outstanding! You got a top score.")
+else:
+    print("Keep practicing, you will get it!")
+`,
+  javascript: `// Welcome to JavaScript Mode!
+// The language that powers the modern web.
+
+let name = "Alex";
+let score = 10;
+
+console.log("Hello, " + name + "!");
+
+if (score >= 10) {
+    console.log("Outstanding! You got a top score.");
+} else {
+    console.log("Keep practicing, you will get it!");
+}
+`,
+};
 
 export const EXAMPLES: ExampleProgram[] = [
   {
@@ -188,6 +232,132 @@ slices = total_pizzas / people`,
 ZeroDivisionError: division by zero`,
       explanation: "Python crashes with ZeroDivisionError. EasyCode gently explains the mathematical reason and shows how to guard against it.",
     },
+  },
+  // Python Examples
+  {
+    id: "py-starter-loops",
+    title: "Python: Loops & Logic",
+    category: "starter",
+    language: "python",
+    description: "For-in range loops and conditions in Python.",
+    code: `# Python loops and condition demonstration
+total = 0
+for i in range(5):
+    total = total + i
+    print("Step " + str(i) + ": total is " + str(total))
+
+if total >= 10:
+    print("Done! Sum is double digits.")
+else:
+    print("Done! Sum is single digit.")
+`,
+  },
+  {
+    id: "py-starter-functions",
+    title: "Python: Functions & Math",
+    category: "starter",
+    language: "python",
+    description: "Defining functions and returning computed values in Python.",
+    code: `# Python function definition and call
+def calculate_box_volume(w, h, d):
+    return w * h * d
+
+width = 4
+height = 5
+depth = 2
+volume = calculate_box_volume(width, height, depth)
+
+print("Box volume: " + str(volume) + " cubic units")
+`,
+  },
+  {
+    id: "py-bug-missing-colon",
+    title: "Python: [Bug] Missing Colon ':'",
+    category: "broken",
+    language: "python",
+    description: "Common Python syntax mistake: forgetting the colon at header end.",
+    code: `# Notice line 3 is missing the trailing colon ':'
+score = 95
+
+if score >= 90
+    print("Grade: A")
+`,
+    expectedBug: "SyntaxError: expected ':' at end of header",
+  },
+  {
+    id: "py-bug-name-error",
+    title: "Python: [Bug] NameError / Typo",
+    category: "broken",
+    language: "python",
+    description: "Notice the spelling mistake in variable name.",
+    code: `# Misspelled variable 'playr_name'
+player_name = "Taylor"
+print("Welcome back, " + playr_name)
+`,
+    expectedBug: "NameError: name 'playr_name' is not defined",
+  },
+  // JavaScript Examples
+  {
+    id: "js-starter-arrays",
+    title: "JavaScript: Arrays & Mapping",
+    category: "starter",
+    language: "javascript",
+    description: "Creating arrays, pushing items, and logging in JavaScript.",
+    code: `// Working with arrays and loops in JavaScript
+const languages = ["EasyCode", "Python"];
+languages.push("JavaScript");
+
+console.log("Total languages: " + languages.length);
+
+for (const lang of languages) {
+    console.log("Learning: " + lang);
+}
+`,
+  },
+  {
+    id: "js-starter-functions",
+    title: "JavaScript: Functions & Scope",
+    category: "starter",
+    language: "javascript",
+    description: "Defining functions and doing calculations in JavaScript.",
+    code: `// Function definitions in JavaScript
+function calculateDiscount(price, discountPercent) {
+    let savings = price * (discountPercent / 100);
+    return price - savings;
+}
+
+let original = 80;
+let finalPrice = calculateDiscount(original, 25);
+
+console.log("Original: $" + original);
+console.log("With 25% off: $" + finalPrice);
+`,
+  },
+  {
+    id: "js-bug-reference-error",
+    title: "JavaScript: [Bug] ReferenceError",
+    category: "broken",
+    language: "javascript",
+    description: "Using an unassigned or undeclared variable in JavaScript.",
+    code: `// Typo on line 3: 'usreName' is not defined
+let userName = "Sam";
+console.log("Welcome, " + usreName);
+`,
+    expectedBug: "ReferenceError: usreName is not defined",
+  },
+  {
+    id: "js-bug-const-reassignment",
+    title: "JavaScript: [Bug] Const Reassignment",
+    category: "broken",
+    language: "javascript",
+    description: "Trying to mutate a variable declared with 'const'.",
+    code: `// 'const' variables cannot be reassigned
+const maxLives = 3;
+console.log("Initial lives: " + maxLives);
+
+maxLives = 2; // TypeError!
+`,
+    expectedBug: "TypeError: Assignment to constant variable",
   },
 ];
 

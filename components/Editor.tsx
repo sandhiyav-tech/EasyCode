@@ -11,9 +11,10 @@ interface EditorProps {
   onExplain?: () => void;
   activeLine?: number | null;
   onSelectErrorLine?: (line: number) => void;
+  language?: "easycode" | "python" | "javascript";
 }
 
-const KEYWORDS = new Set([
+const EASYCODE_KEYWORDS = new Set([
   "set",
   "to",
   "say",
@@ -53,6 +54,63 @@ const KEYWORDS = new Set([
   "false",
 ]);
 
+const PYTHON_KEYWORDS = new Set([
+  "def",
+  "return",
+  "if",
+  "elif",
+  "else",
+  "while",
+  "for",
+  "in",
+  "print",
+  "true",
+  "false",
+  "none",
+  "and",
+  "or",
+  "not",
+  "is",
+  "pass",
+  "break",
+  "continue",
+  "range",
+  "len",
+  "input",
+  "import",
+  "from",
+  "class",
+]);
+
+const JS_KEYWORDS = new Set([
+  "function",
+  "return",
+  "let",
+  "const",
+  "var",
+  "if",
+  "else",
+  "while",
+  "for",
+  "of",
+  "in",
+  "console",
+  "log",
+  "true",
+  "false",
+  "null",
+  "undefined",
+  "class",
+  "new",
+  "this",
+  "prompt",
+  "alert",
+  "try",
+  "catch",
+  "break",
+  "continue",
+]);
+
 export default function Editor({
   code,
   onChange,
@@ -61,6 +119,7 @@ export default function Editor({
   onExplain,
   activeLine,
   onSelectErrorLine,
+  language = "easycode",
 }: EditorProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const highlightRef = useRef<HTMLDivElement>(null);
@@ -148,16 +207,37 @@ export default function Editor({
     const lineNum = lineIndex + 1;
     const lineError = errors.find((e) => e.line === lineNum);
 
+    const activeKeywords =
+      language === "python"
+        ? PYTHON_KEYWORDS
+        : language === "javascript"
+        ? JS_KEYWORDS
+        : EASYCODE_KEYWORDS;
+
     // Tokenize line with regex for keywords, strings, numbers, comments, symbols
     const tokens: React.ReactNode[] = [];
     let idx = 0;
 
     // Check comment
-    const commentIdx = lineText.indexOf("#");
+    let commentIdx = -1;
+    if (language === "javascript") {
+      const slashIdx = lineText.indexOf("//");
+      const hashIdx = lineText.indexOf("#");
+      if (slashIdx !== -1 && hashIdx !== -1) {
+        commentIdx = Math.min(slashIdx, hashIdx);
+      } else if (slashIdx !== -1) {
+        commentIdx = slashIdx;
+      } else {
+        commentIdx = hashIdx;
+      }
+    } else {
+      commentIdx = lineText.indexOf("#");
+    }
+
     const codePart = commentIdx !== -1 ? lineText.slice(0, commentIdx) : lineText;
     const commentPart = commentIdx !== -1 ? lineText.slice(commentIdx) : "";
 
-    const wordRegex = /("[^"]*"|'[^']*'|\b\w+\b|[+\-*/()[\]:,=]| +)/g;
+    const wordRegex = /("[^"]*"|'[^']*'|`[^`]*`|\b\w+\b|[+\-*/()[\]:,=]| +)/g;
     let match;
 
     while ((match = wordRegex.exec(codePart)) !== null) {
@@ -174,11 +254,11 @@ export default function Editor({
       const lower = str.toLowerCase();
       let className = "token-identifier";
 
-      if (str.startsWith('"') || str.startsWith("'")) {
+      if (str.startsWith('"') || str.startsWith("'") || str.startsWith("`")) {
         className = "token-string";
       } else if (/^\d+(\.\d+)?$/.test(str)) {
         className = "token-number";
-      } else if (KEYWORDS.has(lower)) {
+      } else if (activeKeywords.has(lower)) {
         className = "token-keyword";
       } else if (/[+\-*/=]/.test(str)) {
         className = "token-operator";
@@ -277,7 +357,13 @@ export default function Editor({
           autoCapitalize="off"
           autoComplete="off"
           autoCorrect="off"
-          placeholder="Write your EasyCode program here..."
+          placeholder={
+            language === "python"
+              ? "Write your Python code here..."
+              : language === "javascript"
+              ? "Write your JavaScript code here..."
+              : "Write your EasyCode program here..."
+          }
           className="absolute inset-0 w-full h-full py-3 px-4 font-mono text-[13.5px] leading-6 bg-transparent text-transparent caret-warm-800 dark:caret-warm-100 resize-none outline-none border-none whitespace-pre overflow-auto z-10 selection:bg-brand-200/50 dark:selection:bg-brand-900/50"
         />
       </div>

@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { runCode } from "@/lib/easycode";
+import { runJavaScript } from "@/lib/languages/javascript";
+import { runPython } from "@/lib/languages/python";
 
 const MAX_CODE_LENGTH = 5000;
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { code, mode = "run", inputs = [] } = body;
+    const { code, mode = "run", inputs = [], language = "easycode" } = body;
 
     if (typeof code !== "string") {
       return NextResponse.json(
@@ -46,6 +48,29 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // 1. JavaScript execution
+    if (language === "javascript") {
+      const jsResult = runJavaScript(code);
+      return NextResponse.json({
+        success: !jsResult.error,
+        output: jsResult.output,
+        error: jsResult.error,
+        durationMs: jsResult.durationMs,
+      });
+    }
+
+    // 2. Python execution
+    if (language === "python") {
+      const pyResult = runPython(code);
+      return NextResponse.json({
+        success: !pyResult.error,
+        output: pyResult.output,
+        error: pyResult.error,
+        durationMs: pyResult.durationMs,
+      });
+    }
+
+    // 3. Default: EasyCode execution (with explain mode support)
     const runMode = mode === "explain" ? "explain" : "run";
     const result = runCode(code, runMode, {
       inputs,
@@ -80,4 +105,3 @@ export async function POST(req: NextRequest) {
     );
   }
 }
-

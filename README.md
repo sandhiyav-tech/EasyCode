@@ -23,8 +23,11 @@ In traditional languages like Python, Java, or C++, a small beginner mistake pro
 - **Code Editor:** Hand-crafted syntax-highlighted editor with line numbers, error squiggles, and 4-space tab indentation.
 - **Backend:** Next.js Route Handlers (`/app/api/run`, `/app/api/check`, `/app/api/examples`)
 - **Core Engine:** Pure TypeScript hand-written Lexer, Recursive Descent Parser, AST Tree-walk Interpreter, and Step-by-Step Narrator (zero parser-generators, zero `eval`, zero `Function` constructor).
+- **Multi-Language Playground:** Switch seamlessly between **EasyCode**, **Python**, and **JavaScript** with sandboxed execution, real-time syntax highlighting, and comparative error diagnostics.
+- **Cross-Language Transpiler:** 1-click translation from beginner-friendly EasyCode into standard **Python** or **JavaScript** code.
+- **Login Portal & Cloud Storage:** Role-based authentication (Student, Teacher, Explorer) with 1-click demo logins and cloud code snippet saving/loading.
 - **Safety Limits:** 10,000 loop iteration limit and 2.0-second execution timeout to prevent infinite loops on serverless runtimes.
-- **Testing:** Vitest test suite with 100% assertion coverage across all 16 error scenarios.
+- **Testing:** Comprehensive Vitest test suite with 77 automated tests across lexer, parser, interpreter, multi-language runners, transpiler, auth, and error diagnostics.
 - **Deployment:** Vercel-ready with no custom servers or runtime filesystem dependencies.
 
 ---
@@ -108,6 +111,27 @@ say length(items) # prints 2
 - **Math:** `+`, `-`, `*`, `/`, and `remainder of a divided by b`
 - **Comments:** Single line comments start with `#`
 - **Types:** `number`, `text` (strings), `true`/`false` (booleans), `list`
+
+---
+
+## 🌐 Multi-Language Support & Transpiler
+
+EasyCode is more than a single language — it serves as a bridge into industry-standard programming:
+
+1. **🌟 EasyCode Mode:** Hand-crafted, English-like syntax with friendly step-by-step execution narration and kind error cards.
+2. **🐍 Python Mode:** Indentation-based programming with colons and functions. Catches beginner errors like missing `:` or misspelled variables, explaining raw `Traceback` lines in plain English.
+3. **⚡ JavaScript Mode:** Web standard execution with `console.log`, `let`, `const`, and arrays in a safe, sandboxed browser environment.
+4. **🔄 1-Click Transpilation:** Click **"Convert to Python"** or **"Convert to JavaScript"** in the editor toolbar to see how your EasyCode statements translate into authentic code in real-time.
+
+---
+
+## 🔐 Login Portal & Cloud Code Snippets
+
+EasyCode includes a user authentication and profile management system:
+- **Dedicated Login Portal (`/login`):** Sign in or sign up with custom username and password, or use 1-click demo logins for **Student** (`alex@easycode.dev`), **Teacher** (`taylor@easycode.dev`), or **Explorer**.
+- **Role-Based Avatars & Badges:** UI badges for Student / Teacher / Explorer roles.
+- **Cloud Program Storage (`/api/auth/snippets`):** Save your code programs to your cloud account, browse your saved snippets list, and load them into the playground at any time.
+- **Cryptographic Session Security:** PBKDF2 password hashing with unique salt and HMAC-SHA256 signed session cookies. Zero external database required for instant Vercel deployability.
 
 ---
 
