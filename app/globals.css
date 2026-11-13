@@ -1,0 +1,107 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg-primary: #fffdfa;
+    --bg-secondary: #fef8f0;
+    --border-color: #f1e4d3;
+    --text-primary: #2d261e;
+    --text-muted: #7c7062;
+    --accent: #22c55e;
+    --accent-hover: #16a34a;
+  }
+
+  .dark {
+    --bg-primary: #12100e;
+    --bg-secondary: #1a1715;
+    --border-color: #2e2824;
+    --text-primary: #f5ede4;
+    --text-muted: #a39587;
+    --accent: #4ade80;
+    --accent-hover: #22c55e;
+  }
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-fredoka), system-ui, -apple-system, sans-serif;
+  overflow-x: hidden;
+}
+
+/* Custom friendly scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(140, 120, 100, 0.25);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(140, 120, 100, 0.45);
+}
+
+/* Syntax Highlighting Tokens */
+.token-keyword {
+  color: #7c3aed;
+  font-weight: 600;
+}
+.dark .token-keyword {
+  color: #c084fc;
+}
+
+.token-string {
+  color: #059669;
+}
+.dark .token-string {
+  color: #34d399;
+}
+
+.token-number {
+  color: #0284c7;
+  font-weight: 500;
+}
+.dark .token-number {
+  color: #38bdf8;
+}
+
+.token-comment {
+  color: #9ca3af;
+  font-style: italic;
+}
+.dark .token-comment {
+  color: #6b7280;
+}
+
+.token-operator {
+  color: #ea580c;
+  font-weight: 500;
+}
+.dark .token-operator {
+  color: #fb923c;
+}
+
+.token-identifier {
+  color: #334155;
+}
+.dark .token-identifier {
+  color: #e2e8f0;
+}
+
+/* Error squiggle animation */
+.error-squiggle {
+  text-decoration: underline wavy #f87171;
+  text-decoration-skip-ink: none;
+  background-color: rgba(248, 113, 113, 0.12);
+  border-radius: 2px;
+}
+
