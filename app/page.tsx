@@ -5,8 +5,11 @@ import Editor from "@/components/Editor";
 import OutputPanel from "@/components/OutputPanel";
 import ErrorsPanel from "@/components/ErrorsPanel";
 import AskModal, { AskPrompt } from "@/components/AskModal";
+import UserMenu from "@/components/UserMenu";
+import SavedSnippetsModal from "@/components/SavedSnippetsModal";
 import { EasyCodeError } from "@/lib/easycode";
 import { EXAMPLES, ExampleProgram } from "@/lib/easycode/examples";
+import { User, SavedSnippet } from "@/lib/auth";
 import {
   Play,
   Compass,
@@ -19,6 +22,7 @@ import {
   Terminal,
   BookOpen,
   Check,
+  Bookmark,
 } from "lucide-react";
 
 const DEFAULT_CODE = `# Welcome to EasyCode!
@@ -48,13 +52,32 @@ export default function PlaygroundPage() {
   const [showPythonCompare, setShowPythonCompare] = useState<boolean>(false);
   const [copiedShare, setCopiedShare] = useState<boolean>(false);
 
+  // User Authentication & Saved Programs State
+  const [user, setUser] = useState<User | null>(null);
+  const [isSavedSnippetsOpen, setIsSavedSnippetsOpen] = useState(false);
+
   // Ask prompt modal state
   const [isAskModalOpen, setIsAskModalOpen] = useState<boolean>(false);
   const [detectedPrompts, setDetectedPrompts] = useState<AskPrompt[]>([]);
   const pendingRunModeRef = useRef<"run" | "explain">("run");
 
-  // Load code from URL hash on mount
+  // Fetch current authenticated user session
+  const fetchSession = async () => {
+    try {
+      const res = await fetch("/api/auth/me");
+      if (res.ok) {
+        const data = await res.json();
+        setUser(data.user);
+      }
+    } catch {
+      // not logged in
+    }
+  };
+
+  // Load code from URL hash on mount & fetch session
   useEffect(() => {
+    fetchSession();
+
     if (typeof window !== "undefined") {
       const hash = window.location.hash;
       if (hash.startsWith("#code=")) {
@@ -151,7 +174,7 @@ export default function PlaygroundPage() {
           setErrors([data.error]);
           setActiveLine(data.error.line);
         }
-      } catch (err: unknown) {
+      } catch {
         setOutput(["Failed to connect to execution engine."]);
       } finally {
         setIsRunning(false);
@@ -214,6 +237,49 @@ export default function PlaygroundPage() {
     }
   };
 
+  // User Sign Out
+  const handleSignOut = async () => {
+    await fetch("/api/auth/logout", { method: "POST" });
+    setUser(null);
+  };
+
+  // Save Snippet
+  const handleSaveSnippet = async (title: string) => {
+    try {
+      const res = await fetch("/api/auth/snippets", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, code }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.snippet && user) {
+          setUser({
+            ...user,
+            savedSnippets: [data.snippet, ...user.savedSnippets],
+          });
+        }
+      }
+    } catch {
+      // ignore
+    }
+  };
+
+  // Delete Snippet
+  const handleDeleteSnippet = async (id: string) => {
+    try {
+      const res = await fetch(`/api/auth/snippets?id=${id}`, { method: "DELETE" });
+      if (res.ok && user) {
+        setUser({
+          ...user,
+          savedSnippets: user.savedSnippets.filter((s) => s.id !== id),
+        });
+      }
+    } catch {
+      // ignore
+    }
+  };
+
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-warm-50 dark:bg-warm-950 text-warm-900 dark:text-warm-100 font-sans">
       {/* Ask Input Modal */}
@@ -222,6 +288,17 @@ export default function PlaygroundPage() {
         isOpen={isAskModalOpen}
         onSubmit={handleAskModalSubmit}
         onClose={() => setIsAskModalOpen(false)}
+      />
+
+      {/* Saved Snippets Modal */}
+      <SavedSnippetsModal
+        isOpen={isSavedSnippetsOpen}
+        onClose={() => setIsSavedSnippetsOpen(false)}
+        snippets={user?.savedSnippets || []}
+        currentCode={code}
+        onLoadSnippet={(newCode) => setCode(newCode)}
+        onSaveSnippet={handleSaveSnippet}
+        onDeleteSnippet={handleDeleteSnippet}
       />
 
       {/* Top Navbar */}
@@ -290,7 +367,7 @@ export default function PlaygroundPage() {
           </div>
         </div>
 
-        {/* Right: Actions (Run, Explain, Python Compare, Share, Theme) */}
+        {/* Right: Actions (Run, Explain, Save, Python Compare, Share, Theme, User) */}
         <div className="flex items-center gap-2">
           {/* Run Button */}
           <button
@@ -313,6 +390,18 @@ export default function PlaygroundPage() {
             <Compass className="w-3.5 h-3.5" />
             <span>Explain</span>
           </button>
+
+          {/* Save Program Button (Available to logged-in users) */}
+          {user && (
+            <button
+              onClick={() => setIsSavedSnippetsOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold bg-brand-50 hover:bg-brand-100 dark:bg-brand-950/60 dark:hover:bg-brand-900/60 text-brand-700 dark:text-brand-300 rounded-xl transition-colors border border-brand-200 dark:border-brand-900"
+              title="Save or load programs"
+            >
+              <Bookmark className="w-3.5 h-3.5" />
+              <span className="hidden xl:inline">My Programs</span>
+            </button>
+          )}
 
           {/* Compare with Python Toggle */}
           <button
@@ -363,6 +452,15 @@ export default function PlaygroundPage() {
           >
             {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </button>
+
+          {/* User Portal / Sign In Menu */}
+          <div className="pl-1 border-l border-warm-200 dark:border-warm-800">
+            <UserMenu
+              user={user}
+              onSignOut={handleSignOut}
+              onOpenSavedSnippets={() => setIsSavedSnippetsOpen(true)}
+            />
+          </div>
         </div>
       </header>
 
